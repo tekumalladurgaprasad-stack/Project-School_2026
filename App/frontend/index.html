@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrediGuard | Credit Risk Monitoring</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">C</div>
+            <span>CrediGuard</span>
+        </div>
+
+        <p class="nav-label">MAIN MENU</p>
+
+        <nav>
+            <button class="nav-item active" data-page="dashboard">▦ Dashboard</button>
+            <button class="nav-item" data-page="prediction">＋ Add Customer</button>
+            <button class="nav-item" data-page="customers">♙ Customers</button>
+            <button class="nav-item" data-page="history">◷ Prediction History</button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot" id="statusDot"></span>
+                <div>
+                    <strong>API Status</strong>
+                    <small id="statusText">Checking connection...</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Credit Risk Dashboard</h1>
+                <p>Monitor customer credit risk and repayment behaviour.</p>
+            </div>
+
+            <div class="profile">
+                <div class="avatar">AD</div>
+                <div>
+                    <strong>Administrator</strong>
+                    <small>Risk Analyst</small>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- DASHBOARD -->
+
+        <section id="dashboard" class="page-section active">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Overview</h2>
+                    <p>Summary of customers stored in the database</p>
+                </div>
+                <span class="date-label">Credit Risk Monitoring</span>
+            </div>
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Customers</span>
+                        <span class="stat-icon blue">♙</span>
+                    </div>
+                    <h2 id="totalCustomers">0</h2>
+                    <small>Registered customers</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Avg. Credit Limit</span>
+                        <span class="stat-icon purple">⌁</span>
+                    </div>
+                    <h2 id="avgLimit">0</h2>
+                    <small>Average LIMIT_BAL</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Delayed Payers</span>
+                        <span class="stat-icon red">!</span>
+                    </div>
+                    <h2 id="delayedCustomers">0</h2>
+                    <small>Latest repayment status (PAY_0) ≥ 1</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Paying On Time</span>
+                        <span class="stat-icon green">✓</span>
+                    </div>
+                    <h2 id="onTimeCustomers">0</h2>
+                    <small>Latest repayment status (PAY_0) ≤ 0</small>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ADD CUSTOMER -->
+
+        <section id="prediction" class="page-section">
+
+            <div class="panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h2>Add Customer</h2>
+                        <p>Save customer credit details individually or upload multiple records.</p>
+                    </div>
+
+                    <span class="model-badge">POST /customers</span>
+                </div>
+
+                <div class="prediction-tabs">
+                    <button class="prediction-tab active" data-mode="manual">
+                        Manual Entry
+                    </button>
+
+                    <button class="prediction-tab" data-mode="bulk">
+                        Bulk Upload
+                    </button>
+                </div>
+
+                <!-- MANUAL ENTRY -->
+
+                <div id="manualEntry" class="prediction-mode active">
+
+                    <form id="predictionForm">
+
+                        <h3 class="form-section-title">Personal Information</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="LIMIT_BAL">Credit Limit (LIMIT_BAL)</label>
+                                <input type="number" id="LIMIT_BAL" min="1" step="1" placeholder="e.g. 50000" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="SEX">Sex</label>
+                                <select id="SEX" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Male</option>
+                                    <option value="2">Female</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="AGE">Age</label>
+                                <input type="number" id="AGE" min="18" max="100" step="1" placeholder="Enter age" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="EDUCATION">Education</label>
+                                <select id="EDUCATION" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Graduate School</option>
+                                    <option value="2">University</option>
+                                    <option value="3">High School</option>
+                                    <option value="4">Others</option>
+                                    <option value="0">Unknown (0)</option>
+                                    <option value="5">Unknown (5)</option>
+                                    <option value="6">Unknown (6)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="MARRIAGE">Marriage Status</label>
+                                <select id="MARRIAGE" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Married</option>
+                                    <option value="2">Single</option>
+                                    <option value="3">Others</option>
+                                    <option value="0">Unknown (0)</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <h3 class="form-section-title">Repayment Status</h3>
+
+                        <p class="section-description">
+                            Repayment status for the previous six months (PAY_0 is the latest month).
+                            -2 = no consumption, -1 = paid in full, 0 = revolving credit,
+                            1 to 8 = months of payment delay.
+                        </p>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="PAY_0">PAY_0</label>
+                                <input type="number" id="PAY_0" min="-2" max="8" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_2">PAY_2</label>
+                                <input type="number" id="PAY_2" min="-2" max="8" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_3">PAY_3</label>
+                                <input type="number" id="PAY_3" min="-2" max="8" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_4">PAY_4</label>
+                                <input type="number" id="PAY_4" min="-2" max="8" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_5">PAY_5</label>
+                                <input type="number" id="PAY_5" min="-2" max="8" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_6">PAY_6</label>
+                                <input type="number" id="PAY_6" min="-2" max="8" step="1" required>
+                            </div>
+
+                        </div>
+
+                        <h3 class="form-section-title">Bill Amounts</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="BILL_AMT1">BILL_AMT1</label>
+                                <input type="number" id="BILL_AMT1" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="BILL_AMT2">BILL_AMT2</label>
+                                <input type="number" id="BILL_AMT2" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="BILL_AMT3">BILL_AMT3</label>
+                                <input type="number" id="BILL_AMT3" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="BILL_AMT4">BILL_AMT4</label>
+                                <input type="number" id="BILL_AMT4" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="BILL_AMT5">BILL_AMT5</label>
+                                <input type="number" id="BILL_AMT5" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="BILL_AMT6">BILL_AMT6</label>
+                                <input type="number" id="BILL_AMT6" step="1" required>
+                            </div>
+
+                        </div>
+
+                        <h3 class="form-section-title">Previous Payment Amounts</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="PAY_AMT1">PAY_AMT1</label>
+                                <input type="number" id="PAY_AMT1" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_AMT2">PAY_AMT2</label>
+                                <input type="number" id="PAY_AMT2" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_AMT3">PAY_AMT3</label>
+                                <input type="number" id="PAY_AMT3" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_AMT4">PAY_AMT4</label>
+                                <input type="number" id="PAY_AMT4" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_AMT5">PAY_AMT5</label>
+                                <input type="number" id="PAY_AMT5" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PAY_AMT6">PAY_AMT6</label>
+                                <input type="number" id="PAY_AMT6" min="0" step="1" required>
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="reset" class="btn-secondary">Clear Form</button>
+                            <button type="submit" class="btn-primary" id="saveBtn">
+                                Save Customer →
+                            </button>
+                        </div>
+
+                    </form>
+
+                    <div id="predictionResult" class="result-box">
+                        <div class="result-placeholder">
+                            <span>⌁</span>
+                            <h3>Awaiting Submission</h3>
+                            <p>Fill in the customer details and save them to the database.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- BULK UPLOAD -->
+
+                <div id="bulkUpload" class="prediction-mode">
+
+                    <div class="upload-info">
+                        <h3>Bulk Customer Upload</h3>
+                        <p>
+                            Upload a CSV or JSON file containing multiple customer records.
+                            Each record is validated and saved through the API one by one.
+                        </p>
+                    </div>
+
+                    <div class="template-box">
+
+                        <div class="template-icon">▤</div>
+
+                        <div class="template-details">
+                            <strong>Need a file template?</strong>
+                            <p>Download a CSV with the required column names and a sample row.</p>
+                        </div>
+
+                        <button type="button" id="downloadTemplate" class="btn-secondary">
+                            Download Template
+                        </button>
+
+                    </div>
+
+                    <form id="bulkUploadForm">
+
+                        <div class="upload-area" id="uploadArea">
+
+                            <div class="upload-icon">↑</div>
+
+                            <h3>Upload Customer Data</h3>
+
+                            <p>
+                                Drag and drop your file here or browse your device.
+                            </p>
+
+                            <label for="customerFile" class="browse-btn">
+                                Browse Files
+                            </label>
+
+                            <input
+                                type="file"
+                                id="customerFile"
+                                accept=".csv,.json"
+                                hidden
+                                required
+                            >
+
+                            <div id="fileName" class="file-name">
+                                Supported formats: CSV, JSON
+                            </div>
+
+                        </div>
+
+                        <div class="upload-note">
+                            <strong>Important:</strong>
+                            Columns must match the 23 field names exactly (LIMIT_BAL, SEX, EDUCATION,
+                            MARRIAGE, AGE, PAY_0, PAY_2 to PAY_6, BILL_AMT1 to BILL_AMT6,
+                            PAY_AMT1 to PAY_AMT6). Any extra columns such as ID or DEFAULT are ignored.
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="reset" class="btn-secondary">
+                                Clear File
+                            </button>
+
+                            <button type="submit" class="btn-primary" id="bulkBtn">
+                                Upload & Save →
+                            </button>
+                        </div>
+
+                    </form>
+
+                    <div id="bulkResult" class="result-box">
+                        <div class="result-placeholder">
+                            <span>⌁</span>
+                            <h3>Awaiting File Upload</h3>
+                            <p>Upload customer records to begin.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- CUSTOMERS -->
+
+        <section id="customers" class="page-section">
+
+            <div class="panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h2>Customer Records</h2>
+                        <p>Customers stored in the CrediGuard database.</p>
+                    </div>
+
+                    <button type="button" class="btn-secondary" id="refreshCustomers">Refresh</button>
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Credit Limit</th>
+                                <th>Age</th>
+                                <th>Sex</th>
+                                <th>Education</th>
+                                <th>Marriage</th>
+                                <th>Latest Repayment (PAY_0)</th>
+                                <th>Latest Bill (BILL_AMT1)</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="customerTable">
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    No customer records available.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- PREDICTION HISTORY -->
+
+        <section id="history" class="page-section">
+
+            <div class="panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h2>Prediction History</h2>
+                        <p>Previously generated risk assessments.</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Prediction</th>
+                                <th>Default Probability</th>
+                                <th>Assessment Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="historyTable">
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    Predictions aren't available yet. They will show up here once
+                                    the backend has a prediction endpoint.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <footer>
+            CrediGuard © 2026 | Credit Risk Monitoring & Decision Support Platform
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
