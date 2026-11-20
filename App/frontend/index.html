@@ -116,6 +116,34 @@
 
             </div>
 
+            <div class="panel" style="margin-top: 28px;">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Recent Risk Assessments</h2>
+                        <p>Latest automated default evaluations from the machine learning model.</p>
+                    </div>
+                    <button type="button" class="btn-secondary" id="viewAllHistory">View All History →</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer Profile</th>
+                                <th>Risk Level</th>
+                                <th>Verdict</th>
+                                <th>Default Probability</th>
+                                <th>Assessment Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardHistoryTable">
+                            <tr>
+                                <td colspan="5" class="empty-state">No predictions recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </section>
 
         <!-- ADD CUSTOMER -->
@@ -315,6 +343,7 @@
 
                         <div class="form-actions">
                             <button type="reset" class="btn-secondary">Clear Form</button>
+                            <button type="button" class="btn-secondary" id="predictBtn">⚡ Predict Risk</button>
                             <button type="submit" class="btn-primary" id="saveBtn">
                                 Save Customer →
                             </button>
@@ -450,12 +479,13 @@
                                 <th>Marriage</th>
                                 <th>Latest Repayment (PAY_0)</th>
                                 <th>Latest Bill (BILL_AMT1)</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
 
                         <tbody id="customerTable">
                             <tr>
-                                <td colspan="8" class="empty-state">
+                                <td colspan="9" class="empty-state">
                                     No customer records available.
                                 </td>
                             </tr>
@@ -479,6 +509,7 @@
                         <h2>Prediction History</h2>
                         <p>Previously generated risk assessments.</p>
                     </div>
+                    <button type="button" class="btn-secondary" id="refreshHistory">Refresh</button>
                 </div>
 
                 <div class="table-wrapper">
@@ -486,8 +517,9 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Customer</th>
-                                <th>Prediction</th>
+                                <th>Customer Profile</th>
+                                <th>Risk Level</th>
+                                <th>Verdict</th>
                                 <th>Default Probability</th>
                                 <th>Assessment Date</th>
                             </tr>
@@ -495,9 +527,8 @@
 
                         <tbody id="historyTable">
                             <tr>
-                                <td colspan="4" class="empty-state">
-                                    Predictions aren't available yet. They will show up here once
-                                    the backend has a prediction endpoint.
+                                <td colspan="5" class="empty-state">
+                                    Loading predictions...
                                 </td>
                             </tr>
                         </tbody>

@@ -113,6 +113,8 @@ navItems.forEach(function(item) {
 
         if (selectedPage === "dashboard" || selectedPage === "customers") {
             loadCustomers();
+        } else if (selectedPage === "history") {
+            loadPredictions();
         }
     });
 });
@@ -188,12 +190,15 @@ function renderStats(customers) {
     document.getElementById("onTimeCustomers").textContent = fmt(total - delayed);
 }
 
+let currentCustomerList = [];
+
 function renderCustomerTable(customers) {
     const table = document.getElementById("customerTable");
+    currentCustomerList = customers;
 
     if (customers.length === 0) {
         table.innerHTML =
-            '<tr><td colspan="8" class="empty-state">No customer records available.</td></tr>';
+            '<tr><td colspan="9" class="empty-state">No customer records available.</td></tr>';
         return;
     }
 
@@ -205,15 +210,50 @@ function renderCustomerTable(customers) {
 
         return "<tr>" +
             "<td>" + (i + 1) + "</td>" +
-            "<td>" + fmt(c.LIMIT_BAL) + "</td>" +
+            "<td>$" + fmt(c.LIMIT_BAL) + "</td>" +
             "<td>" + c.AGE + "</td>" +
             "<td>" + (SEX_LABELS[c.SEX] || c.SEX) + "</td>" +
             "<td>" + (EDUCATION_LABELS[c.EDUCATION] || c.EDUCATION) + "</td>" +
             "<td>" + (MARRIAGE_LABELS[c.MARRIAGE] || c.MARRIAGE) + "</td>" +
             "<td>" + badge + "</td>" +
-            "<td>" + fmt(c.BILL_AMT1) + "</td>" +
+            "<td>$" + fmt(c.BILL_AMT1) + "</td>" +
+            "<td><button type='button' class='btn-secondary btn-sm assess-btn' data-idx='" + i + "'>⚡ Assess Risk</button></td>" +
             "</tr>";
     }).join("");
+
+    table.querySelectorAll(".assess-btn").forEach(function(btn) {
+        btn.addEventListener("click", async function() {
+            const idx = Number(btn.dataset.idx);
+            const customer = currentCustomerList[idx];
+            if (!customer) return;
+
+            btn.disabled = true;
+            btn.textContent = "Assessing...";
+
+            try {
+                const data = await api("/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(customer)
+                });
+
+                const verdict = data.default ? "Default Risk Detected" : "Low Risk (Repayment Likely)";
+                alert("Risk Evaluation for Customer #" + (idx + 1) + ":\n\n" +
+                      "• Risk Tier: " + data.risk_level + "\n" +
+                      "• Verdict: " + verdict + "\n" +
+                      "• Default Probability: " + (data.probability * 100).toFixed(1) + "%\n" +
+                      "• Model Cutoff: " + (data.threshold * 100).toFixed(1) + "%\n\n" +
+                      "This assessment has been logged in Prediction History.");
+
+                loadPredictions();
+            } catch (err) {
+                alert("Error assessing risk: " + errorMessage(err));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "⚡ Assess Risk";
+            }
+        });
+    });
 }
 
 document.getElementById("refreshCustomers").addEventListener("click", loadCustomers);
@@ -259,12 +299,28 @@ predictionForm.addEventListener("submit", async function(e) {
             body: JSON.stringify(payload)
         });
 
-        showResult(predictionResult, "success", "Customer saved",
-            "<p>" + esc(data.message) + "</p>" +
-            '<p class="result-id">Customer ID: ' + esc(data.customer_id) + "</p>");
+        let resultHtml = "<p>" + esc(data.message) + "</p>" +
+            '<p class="result-id">Customer ID: ' + esc(data.customer_id) + "</p>";
+
+        if (data.risk_assessment) {
+            const ra = data.risk_assessment;
+            const isDef = ra.default;
+            const badgeClass = isDef ? "badge badge-red" : "badge badge-green";
+            const verdict = isDef ? "High Default Risk" : "Low Risk (Repayment Likely)";
+            const probPct = (ra.probability * 100).toFixed(1) + "%";
+
+            resultHtml += '<div style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.03); border-radius:8px;">' +
+                '<div><strong>Risk Level:</strong> <span class="' + badgeClass + '">' + esc(ra.risk_level) + '</span></div>' +
+                '<div style="margin-top:6px;"><strong>Model Verdict:</strong> ' + esc(verdict) + '</div>' +
+                '<div style="margin-top:4px;"><strong>Default Probability:</strong> ' + esc(probPct) + ' <small style="color:var(--text-muted);">(Model Cutoff: ' + ((ra.threshold || 0.1779) * 100).toFixed(1) + '%)</small></div>' +
+                '</div>';
+        }
+
+        showResult(predictionResult, "success", "Customer Saved & Risk Assessed", resultHtml);
 
         predictionForm.reset();
         loadCustomers();
+        loadPredictions();
     } catch (err) {
         showResult(predictionResult, "error", "Could not save customer",
             "<p>" + esc(errorMessage(err)) + "</p>");
@@ -273,6 +329,46 @@ predictionForm.addEventListener("submit", async function(e) {
         saveBtn.textContent = "Save Customer →";
     }
 });
+
+const predictBtn = document.getElementById("predictBtn");
+if (predictBtn) {
+    predictBtn.addEventListener("click", async function() {
+        const payload = readForm();
+        if (!payload) return;
+
+        predictBtn.disabled = true;
+        predictBtn.textContent = "Assessing...";
+
+        try {
+            const data = await api("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const isDef = data.default;
+            const badgeClass = isDef ? "badge badge-red" : "badge badge-green";
+            const verdict = isDef ? "High Default Risk Detected" : "Low Risk (Good Credit Standing)";
+            const probPct = (data.probability * 100).toFixed(1) + "%";
+
+            const resultHtml = '<div style="margin-top:6px;">' +
+                '<p><strong>Risk Level:</strong> <span class="' + badgeClass + '">' + esc(data.risk_level) + '</span></p>' +
+                '<p style="margin-top:6px;"><strong>Model Verdict:</strong> ' + esc(verdict) + '</p>' +
+                '<p style="margin-top:4px;"><strong>Default Probability:</strong> ' + esc(probPct) + ' <small style="color:var(--text-muted);">(Threshold: ' + ((data.threshold || 0.1779) * 100).toFixed(1) + '%)</small></p>' +
+                '<p style="margin-top:8px; font-size:12px; color:var(--text-muted);">Assessment recorded in Prediction History.</p>' +
+                '</div>';
+
+            showResult(predictionResult, isDef ? "warning" : "success", "Risk Assessment Complete", resultHtml);
+            loadPredictions();
+        } catch (err) {
+            showResult(predictionResult, "error", "Prediction Failed",
+                "<p>" + esc(errorMessage(err)) + "</p>");
+        } finally {
+            predictBtn.disabled = false;
+            predictBtn.textContent = "⚡ Predict Risk";
+        }
+    });
+}
 
 predictionForm.addEventListener("reset", function() {
     predictionResult.className = "result-box";
@@ -495,9 +591,91 @@ bulkForm.addEventListener("submit", async function(e) {
     bulkBtn.textContent = "Upload & Save →";
 
     loadCustomers();
+    loadPredictions();
 });
+
+
+// ================= PREDICTION HISTORY =================
+
+async function loadPredictions() {
+    const table = document.getElementById("historyTable");
+    if (!table) return;
+
+    try {
+        const data = await api("/predictions");
+        const predictions = data.predictions || [];
+        renderHistoryTable(predictions);
+    } catch (err) {
+        table.innerHTML =
+            '<tr><td colspan="5" class="empty-state">' + esc(errorMessage(err)) + '</td></tr>';
+    }
+}
+
+function renderHistoryTable(predictions) {
+    const table = document.getElementById("historyTable");
+    const dashTable = document.getElementById("dashboardHistoryTable");
+
+    if (!predictions.length) {
+        if (table) {
+            table.innerHTML =
+                '<tr><td colspan="5" class="empty-state">No predictions recorded yet. Fill out the Add Customer form or use Predict Risk to generate an assessment.</td></tr>';
+        }
+        if (dashTable) {
+            dashTable.innerHTML =
+                '<tr><td colspan="5" class="empty-state">No predictions recorded yet.</td></tr>';
+        }
+        return;
+    }
+
+    const rowsHtml = predictions.map(function(p) {
+        const cs = p.customer_summary || {};
+        const isDefault = p.default || p.prediction === 1;
+        const badgeClass = isDefault ? "badge badge-red" : "badge badge-green";
+        const verdictText = isDefault ? "Default Risk" : "No Default";
+        const probPct = (p.default_probability * 100).toFixed(1) + "%";
+        const riskLevel = p.risk_level || (isDefault ? "High" : "Low");
+        const riskBadge = riskLevel === "High" ? "badge badge-red" : riskLevel === "Moderate" ? "badge badge-yellow" : "badge badge-green";
+        const date = p.created_at || "—";
+        const sexText = SEX_LABELS[cs.SEX] || "—";
+        const profile = "Age " + (cs.AGE || "—") + ", " + sexText + " · Limit: $" + fmt(cs.LIMIT_BAL || 0);
+
+        return "<tr>" +
+            "<td><strong>" + esc(profile) + "</strong></td>" +
+            "<td><span class=\"" + riskBadge + "\">" + esc(riskLevel) + "</span></td>" +
+            "<td><span class=\"" + badgeClass + "\">" + esc(verdictText) + "</span></td>" +
+            "<td><strong>" + esc(probPct) + "</strong> <small style='color:var(--text-muted);'>(Cutoff: " + ((p.threshold || 0.1779) * 100).toFixed(1) + "%)</small></td>" +
+            "<td>" + esc(date) + "</td>" +
+            "</tr>";
+    });
+
+    if (table) {
+        table.innerHTML = rowsHtml.join("");
+    }
+    if (dashTable) {
+        dashTable.innerHTML = rowsHtml.slice(0, 5).join("");
+    }
+}
+
+const viewAllHistoryBtn = document.getElementById("viewAllHistory");
+if (viewAllHistoryBtn) {
+    viewAllHistoryBtn.addEventListener("click", function() {
+        const historyNav = document.querySelector('.nav-item[data-page="history"]');
+        if (historyNav) historyNav.click();
+    });
+}
+
+const refreshHistoryBtn = document.getElementById("refreshHistory");
+if (refreshHistoryBtn) {
+    refreshHistoryBtn.addEventListener("click", function() {
+        refreshHistoryBtn.textContent = "Refreshing...";
+        loadPredictions().finally(function() {
+            refreshHistoryBtn.textContent = "Refresh";
+        });
+    });
+}
 
 
 // ================= INIT =================
 
 loadCustomers();
+loadPredictions();

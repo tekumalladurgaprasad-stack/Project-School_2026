@@ -843,6 +843,16 @@ footer {
     color: #2da879;
 }
 
+.badge-yellow {
+    background: #fff8e6;
+    color: #b27b00;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
 .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
